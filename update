@@ -1,0 +1,6 @@
+This is the file that will be pulled in the case of an update to the suite. It contains the paths to
+any modules that may be added or removed. Upon being pulled, it will be read, parsed of this header, and re-written to the
+'gitsearch' file locally.
+
+
+recon/gittest/test
