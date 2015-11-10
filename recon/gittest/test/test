@@ -1,0 +1,29 @@
+#This is the test script for the Null-Byte suite repository functionality!
+
+#! /usr/bin/python
+from logging import getLogger, ERROR
+getLogger('scapy.runtime').setLevel(ERROR)
+from scapy.all import *
+import sys
+
+RHOST = sys.argv[1]
+inter = sys.argv[2]
+
+def action(pkt):
+  if pkt.haslayer(DNS) and pkt.haslayer(IP):
+    if pkt.getlayer(IP).src == RHOST:
+      ip_src = pkt.getlayer(IP).src
+      ip_dst = pkt.getlayer(IP).dst
+      print ip_src + " -> " + ip_dst + ": " + pkt.getlayer(DNS).qd.qname
+    else:
+      return
+  else:
+    return
+
+print "[*] Sniffing Started!"
+print "[*] Enter Control + C to Stop Sniffing!"
+
+sniff(filter='port 53', prn=action, iface=inter, store=0)
+print "[*] User Reqested Shutdown!"
+print "[*] Exiting!"
+sys.exit(1) # Reduntant exit, but force of habit.
