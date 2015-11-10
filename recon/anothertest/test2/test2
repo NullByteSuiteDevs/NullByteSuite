@@ -1,0 +1,5 @@
+# Second test script for NBS repo!
+
+#! /usr/bin/python
+string = sys.argv[1]
+print string
