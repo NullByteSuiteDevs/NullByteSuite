@@ -1,6 +1,7 @@
-#This is the test script for the Null-Byte suite repository functionality!
-
 #! /usr/bin/python
+
+#This is the test for the Null-Byte suite repository functionality!
+
 from logging import getLogger, ERROR
 getLogger('scapy.runtime').setLevel(ERROR)
 from scapy.all import *
