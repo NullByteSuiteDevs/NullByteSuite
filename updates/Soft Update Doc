@@ -1,7 +1,7 @@
 This file will outline what these files and directories are for, and how they will operate. 
 
-To start, there are two categories of updates, soft and hard. For information on hard updates, see the REAME in the 'fullupdate'
-directory. This file will only outline the soft updates.
+To start, there are two categories of updates, soft and hard. For information on hard updates, see the 'Hard Update Doc' file
+in the 'fullupdate' directory. This file will only outline the soft updates.
 
 checkup file:
   This file will be used to check for updates. It contains the current version number. This file will be pulled, read, and the
