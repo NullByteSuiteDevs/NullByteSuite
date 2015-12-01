@@ -21,3 +21,9 @@ updated-repo:
   the 'localcontents' file. If a module found in local contents is also in the updated-repo file, it will be removed from the
   updated-repo file. This file will then overwrite the current repocontents file. This will grant the user access to any new
   modules that are added to the repository.
+
+
+That's all the documentation on soft updates we have for now.
+Happy Hacking!
+
+-Defalt
