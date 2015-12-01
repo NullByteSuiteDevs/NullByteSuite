@@ -1,0 +1,23 @@
+This file will outline what these files and directories are for, and how they will operate. 
+
+To start, there are to categories of updates, soft and hard. For information on hard updates, see the REAME in the 'fullupdate'
+directory. This file will only outline the soft updates.
+
+checkup file:
+  This file will be used to check for updates. It contains the current version number. This file will be pulled, read, and the
+  version number will be cross referenced with the current version number stored in the 'vinfo' file locally. If they match,
+  there are no updates. If they don't match, an update will be prompted. If this prompt is accepted, the other files in this 
+  directory will be used to update the local files. For specific information on each files purpose, see that files section of this
+  readme.
+  
+  
+updated-banners:
+  This file will contain the updated banners. It will be pulled, read, and it's contents will overwrite the existing contents
+  with no cross references.
+  
+
+updated-repo:
+  This file will contain the updated contents for the 'repocontents' file. It will be pulled, read, and cross referenced with
+  the 'localcontents' file. If a module found in local contents is also in the updated-repo file, it will be removed from the
+  updated-repo file. This file will then overwrite the current repocontents file. This will grant the user access to any new
+  modules that are added to the repository.
