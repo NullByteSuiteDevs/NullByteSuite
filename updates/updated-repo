@@ -1,5 +1,1 @@
-This file will be used to update the repoistory contents file. Upon update, it will be pulled, parsed of this header, and cross
-referenced with the users current local contents. If there are any modules listed in local contents that are also listed 
-in the updated-repo file, they are removed from the updated-repo file, as they are already contained locally. Any remaining
-modules will be written to the repo contents file.
-SPLIT
+
