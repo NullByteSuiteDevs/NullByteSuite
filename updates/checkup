@@ -1,0 +1,6 @@
+This file will be used to check for updates. Upon booting into online mode, it will be pulled, parsed of this header,
+and the following version number will be read and cross referenced to the users current version number. If they match,
+no updates are available, if they don't match, an update will be prompted. Saying no will force boot into offline mode, saying
+yes will launch the update. 
+SPLIT
+Version 1.0
