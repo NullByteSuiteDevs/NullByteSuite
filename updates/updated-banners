@@ -1,3 +1,1 @@
-This file will be used to update the start up banners. Upon update, it will be pulled and read. The contents of this file will
-immediately be written to the local banners file, no cross referencing will take place.
-SPLIT
+
