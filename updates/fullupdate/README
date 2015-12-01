@@ -1,0 +1,12 @@
+This directory will always contain the code for the most up to date version of the suite. It will replace the current
+local version of the suite. We classify our updates into two categories. Soft and hard. A soft update only updates files
+that the suite uses, it doesn't replace the suite. A hard update will replace the suite with a newer version. Soft updates are
+signified through version number, while hard updates are signified through version name. Both will be checked on boot. 
+We've already described how soft updates will be performed within the README file in the updates directory. Hard updates will
+be checked on boot as well, if they are accepted, it will ask the user to enter 'nbsupdate' to begin the update. If they are
+refused, offline mode will be forced.
+
+That's all we have to say about hard updates for now. 
+Happy hacking!
+
+-Defalt
