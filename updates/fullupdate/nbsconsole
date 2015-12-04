@@ -1,0 +1,801 @@
+#! /usr/bin/python
+from os import system, makedirs
+import sys
+from random import randint
+import socket
+import subprocess
+import re
+import shutil
+
+basepath = "/usr/share/nbs/"
+baseURL = 'https://www.github.com/NullByteSuiteDevs/NullByteSuite/raw/master/tools/'
+updateURL = 'https://www.github.com/NullByteSuiteDevs/NullByteSuite/raw/master/updates/'
+order = []
+config = {}
+prompt = ["\033[4mnbs\033[0m ", " > "]
+path = []
+mode = []
+
+class colors(object):
+	red = '\033[91m'
+	blue = '\033[94m'
+	green = '\033[92m'
+	end = '\033[0m'
+	yellow = '\033[93m'
+
+def setmode():
+	if '--offline' in sys.argv:
+		mode.append('offline')
+		return
+	elif '--offline' not in sys.argv:
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		try:
+			status = s.connect_ex(('www.github.com', 80))
+		except Exception:
+			print colors.red + '[!] ' + colors.end + 'Error: Update Check Failed, Forcing Offline Boot'
+			mode.append('offline')
+			return
+		s.close()
+		if status == 0:
+			try:
+				makedirs(basepath + 'resources/updates')
+			except OSError:
+				pass
+			getlog = subprocess.Popen(['wget', '-P', basepath + 'resources/updates', updateURL + 'checkup'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+			out, err = getlog.communicate()
+			if 'failed' in err:
+				print colors.red + '[!] ' + colors.end + 'Error: Update Check Failed, Forcing Offline Boot'
+				shutil.rmtree(basepath + 'resources/updates')
+				mode.append('offline')
+				return
+			else:
+				pass
+			with open(basepath + 'resources/vinfo') as file:
+				vinfo = file.read()
+			vinfo = vinfo.strip().split('\n')
+			vnum = vinfo[0]
+			vname = vinfo[1]
+			with open(basepath + 'resources/updates/checkup') as file:
+				checkup = file.read()
+			checkup = checkup.strip().split('\n')
+			checknum = checkup[0]
+			checkname = checkup[1]
+			if vname == checkname:
+				pass
+			elif vname != checkname:
+				print colors.blue + '[*] ' + colors.end + 'There is a Major Update Available!'
+				print colors.blue + '[*] ' + colors.end + 'Please Run nbsupdate or Boot into Offline Mode!'
+				sys.exit(1)
+			else:
+				pass
+			if vnum == checknum:
+				mode.append('online')
+				shutil.rmtree(basepath + 'resources/updates')
+				return
+			elif vnum != checknum:
+				print colors.blue + '[*] ' + colors.end + 'There are Minor Updates Available!'
+				descision = raw_input(colors.blue + '[*] ' + colors.end + 'Perform Updates? [y/N] ')
+				if descision.strip()[0].lower() == 'n':
+					print colors.red + '[!] ' + colors.end + 'Error: User Denied Updates, Forcing Offline Mode'
+					shutil.rmtree(basepath + 'resources/updates')
+					mode.append('offline')
+					return
+				elif descision.strip()[0].lower() == 'y':
+					print colors.blue + '[*] ' + colors.end + 'Attempting Update(s)'
+					getrepo = subprocess.Popen(['wget', '-P', basepath + 'resources/updates', updateURL + 'updated-repo'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+					out, err = getrepo.communicate()
+					if 'failed' in err.lower():
+						print colors.red + '[!] ' + colors.end + 'Error: Failed to Download Updated Repo File, Forcing Offline Mode'
+						shutil.rmtree(basepath + 'resources/updates')
+						mode.append('offline')
+						return
+					else:
+						pass
+					try:
+						with open(basepath + 'resources/updates/updated-repo') as file:
+							newrepo = file.read()
+					except IOError:
+						print colors.red + '[!] ' + 'Error: Failed to Read Updated Repo, Forcing Offline Mode'
+						shutil.rmtree(basepath + 'resources/updates')
+						mode.append('offline')
+						return
+					newrepo = newrepo.strip().split('\n')
+					try:
+						with open(basepath + 'resources/localcontents') as file:
+							local = file.read()
+					except IOError:
+						print colors.red + '[!] ' + colors.end + 'Error: Failed to Read Local Contents, Forcing Offline Mode'
+						shutil.rmtree(basepath + 'resources/updates')
+						mode.append('offline')
+						return
+					local = local.strip().split('\n')
+					for i in range(len(local)):
+						if local[i] in newrepo:
+							newrepo.remove(local[i])
+					try:
+						with open(basepath + 'resources/repocontents', 'w') as file:
+							for i in range(len(newrepo)):
+								file.write(newrepo[i] + '\n')
+					except IOError:
+						print colors.red + '[!] ' + colors.end + 'Error: Failed to Read Repo Contents, Forcing Offline Mode'
+						shutil.rmtree(basepath + 'resources/updates')
+						mode.append('offline')
+						return
+					getbans = subprocess.Popen(['wget', '-P', basepath + 'resources/updates', updateURL + 'updated-banners'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+					out, err = getbans.communicate()
+					if 'failed' in err.lower():
+						print colors.red + '[!] ' + colors.end + 'Error: Failed to Download Updated Banners, Forcing Offline Mode'
+						shutil.rmtree(basepath + 'resources/updates')
+						mode.append('offline')
+						return
+					else:
+						pass
+					try:
+						with open(basepath + 'resources/updates/updated-banners') as file:
+							newbans = file.read()
+					except IOError:
+						print colors.red + '[!] ' + colors.end + 'Error: Failed to Read Updated Banners, Forcing Offline Mode'
+						shutil.rmtree(basepath + 'resources/updates')
+						mode.append('offline')
+						return
+					newbans = newbans.strip('\n').split('\n\n\t\n\n')
+					try:
+						with open(basepath + 'resources/banners', 'w') as file:
+							for i in range(len(newbans)):
+								if newbans[i] != newbans[-1]:
+									file.write(newbans[i] + '\n\n\t\n\n')
+								elif newbans[i] == newbans[-1]:
+									file.write(newbans[i])
+					except IOError:
+						print colors.red + '[!] ' + colors.end + 'Error: Failed to Write Banners File, Forcing Offline Mode'
+						shutil.rmtree(basepath + 'resources/updates')
+						mode.append('offline')
+						return
+					with open(basepath + 'resources/vinfo', 'w') as file:
+						for i in range(len(checkup)):
+							file.write(checkup[i] + '\n')
+					shutil.rmtree(basepath + 'resources/updates')
+					mode.append('online')
+					print colors.blue + '[*] ' + colors.end + 'Update(s) Complete!\n'
+					return
+				else:
+					print colors.red + '[!] ' + colors.end + 'Error: Invalid Option, Forcing Offline Mode'
+					mode.append('offline')
+					return
+			else:
+				pass
+		elif status != 0:
+			print colors.red + '[!] ' + colors.end + 'Error: Update Check Failed, Forcing Offline Boot'
+			mode.append('offline')
+			return	
+
+
+def intro():
+	if '--quiet' in sys.argv or '-q' in sys.argv:
+		print '\n\n'
+		return
+	elif '--help' in sys.argv or '-h' in sys.argv:
+		try:
+			with open(basepath + 'resources/help/arghelp') as file:
+				arghelp = file.read()
+		except IOError:
+			print colors.red + '[!] ' + colors.end + 'Error: Failed to Load Argument Help File'
+			sys.exit(1)
+		print arghelp
+		sys.exit(1)
+	elif '--repo' in sys.argv:
+		print colors.blue + '[*] ' + colors.end + 'Verifying Repository Connection...',
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		try:
+			status = s.connect_ex(('www.github.com', 80))
+		except Exception:
+			print '[' + colors.red + 'FAIL' + colors.end + ']'
+			print colors.red + '[!] ' + colors.end + 'Repository Unavailable!'
+			sys.exit(1)
+		s.close()
+		if status == 0:
+			print '[' + colors.green + 'DONE' + colors.end + ']'
+			print colors.blue + '[*] ' + colors.end + 'Repository Available!'
+			sys.exit(1)
+		else:
+			print '[' + colors.red + 'FAIL' + colors.end + ']'
+			print colors.red + '[!] ' + colors.end + 'Repository Unavailable!'
+			sys.exit(1)
+	else:
+		pass	
+	try:
+		with open(basepath + 'resources/banners') as file:
+			banners = file.read()
+	except IOError:
+		print colors.yellow + '[-] ' + colors.end + 'NFError: Failed to Load Banners File'
+		print '\n'
+		return
+	banners = banners.split('\n\n\t\n\n')
+	banners[-1] = '\n' + banners[-1].strip()
+	try:
+		with open(basepath + 'resources/vinfo') as file:
+			version = file.read()
+	except IOError:
+		print colors.yellow + '[-] ' + colors.end + 'NFError: Failed to Load vInfo File'
+		print '\n'
+		return
+	version = version.strip().split('\n')
+	vnum = version[0]
+	vname = version[1]
+	selection = randint(0, len(banners) - 1)
+	print "Welcome to the..."
+	print banners[selection] + '\n' + vnum + ': ' + vname + '\n\n'
+
+setmode()
+intro()
+
+class launch(object):
+	def __init__(self, filepath):
+		self.filepath = filepath
+		self.fullpath = basepath + 'tools/' + filepath
+		self.scriptname = filepath.split('/')[-1]
+		self.scriptpath = self.fullpath + '/' + self.scriptname
+		self.configfile = self.fullpath + "/config"
+	def offlineload(self):
+		try:
+			with open(self.configfile) as file:
+				tempconfig = file.read()
+		except IOError:
+			print colors.red + "[!] " + colors.end + "Error: Failed to Load Selected Module"
+			return
+		tempconfig = tempconfig.split("\n")			
+		for i in range(len(tempconfig)):
+			if "=" not in tempconfig[i]:
+				tempconfig.remove(tempconfig[i])		
+		if len(order) > 0:
+			config.clear()
+			for i in range(len(order)):
+				order.remove(order[0])
+		else:
+			pass
+		try:
+			for i in range(len(tempconfig)):
+				tempconfig[i] = tempconfig[i].strip().split('=')
+			for i in range(len(tempconfig)):
+				order.append(tempconfig[i][0].strip())
+				tempconfig[i][0] = tempconfig[i][0].strip()
+			tempconfig = dict(tempconfig)
+			for i in tempconfig:
+				config.update({i:tempconfig[i]})
+		except Exception:
+			print colors.red + "[!] " + colors.end + 'Error: Failed to Extract Variables'
+		if len(prompt) == 3:
+			prompt.remove(prompt[1])
+			prompt.insert(1, self.filepath.split('/')[0].strip() + "(" + colors.red + self.scriptname + colors.end + ")")
+			path.remove(path[0])
+			path.append(self.fullpath)
+		elif len(prompt) == 2:
+			prompt.insert(1, self.filepath.split('/')[0].strip() + "(" + colors.red + self.scriptname + colors.end + ")")
+			path.append(self.fullpath)
+	def onlineload(self):
+		try:
+			with open(basepath + 'resources/repocontents') as file:
+				repo = file.read()
+		except IOError:
+			print colors.red + '[!] ' + colors.end + 'Failed to Load Repository Contents'
+			return
+		repo = repo.strip().split('\n')
+		if self.filepath.strip() in repo:
+			print colors.blue + '\n[*] ' + colors.end + 'The Selected Module Must be Downloaded for Use'
+			try:
+				decision = raw_input(colors.blue + '[*] ' + colors.end + 'Download and Install Module? [y/N] ')
+			except KeyboardInterrupt:
+				print colors.red + '[!] ' + colors.end + 'Error: User Cancelled Retrieval'
+				return
+			if decision.strip()[0].lower() == 'y':
+				print colors.yellow + '[-] ' + colors.end + 'WARNING: Interrupting Download/Installation May Cause Major Errors'
+				print colors.blue + '[*] ' + colors.end + 'Verifying Repository Connection... ',
+				try:
+					s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+					status = s.connect_ex(('www.github.com', 80))
+					s.close()
+				except Exception:
+					print '[' + colors.red + 'FAIL' + colors.end + ']'
+					return
+				if status == 0:
+					print '[' + colors.green + 'DONE' + colors.end + ']'
+					print colors.blue + '[*] ' + colors.end + 'Beginning Installation Preparation... ',
+					prep = subprocess.Popen(['mkdir', '-p', self.fullpath.strip()], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+					out, err = prep.communicate()
+					if 'cannot' in err.lower():
+						pass
+					print '[' + colors.green + 'DONE' + colors.end + ']'
+					print colors.blue + '[*] ' + colors.end + 'Beginning Download(s)'
+					print colors.blue + '[*] ' + colors.end + 'Downloading Base Module... ',
+					modURL = baseURL + self.filepath.strip() + '/' + self.scriptname.strip()
+					basedown = subprocess.Popen(['wget', '-P', self.fullpath.strip(), modURL], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+					out, err = basedown.communicate()
+					if 'failed' in err.lower():
+						print '[' + colors.red + 'FAIL' + colors.end + ']'
+						return
+					else:
+						print '[' + colors.green + 'DONE' + colors.end + ']'
+						pass
+					system('chmod 755 ' + self.scriptpath.strip())
+					confURLs = [baseURL + self.filepath.strip() + '/config', baseURL + self.filepath.strip() + '/author']
+					print colors.blue + '[*] ' + colors.end + 'Downloading Configuration File(s)... ',
+					confdown1 = subprocess.Popen(['wget', '-P', self.fullpath.strip(), confURLs[0]], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+					out, err = confdown1.communicate()
+					if 'failed' in err.lower():
+						print '[' + colors.red + 'FAIL' + colors.end + ']'
+						return
+					else:
+						pass
+					confdown2 = subprocess.Popen(['wget', '-P', self.fullpath.strip(), confURLs[1]], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+					out, err = confdown2.communicate()
+					if 'failed' in err.lower():
+						print '[' + colors.yellow + 'WARN' + colors.end + '] Failed to Retreive Non-Essential Files'
+						pass
+					else:
+						print '[' + colors.green + 'DONE' + colors.end + ']'
+					print colors.blue + '[*] ' + colors.end + 'Updating Contents... ',
+					try:
+						with open(basepath + 'resources/repocontents') as file:
+							repo = file.read()
+						repo = repo.strip().split('\n')
+						repo.remove(self.filepath)
+						with open(basepath + 'resources/repocontents', 'w') as file:
+							for i in range(len(repo)):
+								file.write(repo[i] + '\n')
+					except IOError:
+						print '[' + colors.red + 'FAIL' + colors.end + ']'
+						return
+					try:
+						with open(basepath + 'resources/localcontents') as file:
+							local = file.read()
+						local = local.strip().split('\n')
+						local.append(self.filepath)
+						with open(basepath + 'resources/localcontents', 'w') as file:
+							for i in range(len(local)):
+								file.write(local[i] + '\n')
+					except IOError:
+						print '[' + colors.red + 'FAIL' + colors.end + ']'
+						return
+					print '[' + colors.green + 'DONE' + colors.end + ']'
+					print colors.blue + '[*] ' + colors.end + 'Download and Installation Successful!\n'
+					pass
+				elif status == 1:
+					print '[' + colors.red + 'FAIL' + colors.end + ']'
+					return
+			elif decision.strip()[0].lower() == 'n':
+				print colors.red + '[!] ' + colors.end + 'Module Retrieval Cancelled'
+				return
+		else:
+			try:
+				with open(basepath + 'resources/localcontents') as file:
+					local = file.read()
+			except IOError:
+				print colors.red + '[!] ' + colors.end + 'Error: Failed to Load Local Contents'
+				return
+			local = local.strip().split('\n')
+			if self.filepath.strip() in local:
+				pass
+			else:
+				print colors.red + '[!] ' + colors.end + 'Error: No Such Module'
+				return
+		try:
+			with open(self.configfile) as file:
+				tempconfig = file.read()
+		except IOError:
+			print colors.red + "[!] " + colors.end + "Error: Failed to Load Selected Module"
+			return
+		tempconfig = tempconfig.split("\n")			
+		for i in range(len(tempconfig)):
+			if "=" not in tempconfig[i]:
+				tempconfig.remove(tempconfig[i])		
+		if len(order) > 0:
+			config.clear()
+			for i in range(len(order)):
+				order.remove(order[0])
+		else:
+			pass
+		try:
+			for i in range(len(tempconfig)):
+				tempconfig[i] = tempconfig[i].strip().split('=')
+			for i in range(len(tempconfig)):
+				order.append(tempconfig[i][0].strip())
+				tempconfig[i][0] = tempconfig[i][0].strip()
+			tempconfig = dict(tempconfig)
+			for i in tempconfig:
+				config.update({i:tempconfig[i]})
+		except Exception:
+			print colors.red + "[!] " + colors.end + 'Error: Failed to Extract Variables'
+		if len(prompt) == 3:
+			prompt.remove(prompt[1])
+			prompt.insert(1, self.filepath.split('/')[0].strip() + "(" + colors.red + self.scriptname + colors.end + ")")
+			path.remove(path[0])
+			path.append(self.fullpath)
+		elif len(prompt) == 2:
+			prompt.insert(1, self.filepath.split('/')[0].strip() + "(" + colors.red + self.scriptname + colors.end + ")")
+			path.append(self.fullpath)
+								
+class offlinecoms(object):
+	def __init__(self, ui):
+		self.input = ui
+	def help(self):
+		if len(self.input) < 2:
+			try:
+				with open(basepath + 'resources/help/genhelpdown') as file:
+					help = file.read()
+			except IOError:
+				print colors.red + '[!] ' + colors.end + 'Error: Failed to Load General Help File'
+				return
+			print '\n' + colors.green + '[#] ' + colors.end + 'No Command Specified, Showing Brief...\n'
+			print help
+			return
+		else:
+			pass
+		commands = ['help', 'use', 'search', 'set', 'info', 'execute', 'stock']
+		if self.input[1].strip() in commands:
+			com = self.input[1].strip()
+			print
+			try:
+				with open(basepath + 'resources/help/' + self.input[1].strip()) as file:
+					help = file.read()
+					print colors.green + '\n[#] ' + colors.end + 'Displaying Help Page for ' + com + '...\n'
+					print help
+					return
+			except IOError:
+				print colors.red + '[!] ' + colors.end + 'Error: Failed to Load Help File(s)'
+				return
+		else:
+			print colors.red + '[!] ' + colors.end + 'Error: Invalid Help Page Specified'
+			return
+	def setvars(self):
+		if prompt[1] == " > ":
+			print colors.red + "[!] " + colors.end + 'Error: No Module Selected'
+			return		
+		config[self.input[1]] = self.input[2]
+	def info(self):
+		banner = "Variable".ljust(20) + "Value".center(20) + "\n--------------------------------"
+		if prompt[1] == " > ":
+			print colors.red + "[!] " + colors.end + "Error: No Module Selected"
+			return
+		temppath = path[0].strip().split('/')
+		temppath.append("author")
+		authpath = '/'.join(temppath)
+		try:
+			with open(authpath) as file:
+				author = file.read()
+		except IOError:
+			print colors.yellow + "[-] " + colors.end + "NFError: Failed to Load Author File\n"
+			pass
+		try:
+			print "\n" + author
+		except Exception:
+			pass
+		print banner
+		for i in range(len(order)):
+			if order[i] == order[-1]:			
+				print order[i].ljust(20) + config[order[i]].center(20) + '\n'
+			else:
+				print order[i].ljust(20) + config[order[i]].center(20)			
+	def search(self):
+		if len(self.input) == 1:
+
+			try:
+				with open(basepath + 'resources/localcontents') as file:
+					contents = file.read()
+			except IOError:
+				print colors.red + '[!] ' + colors.end + 'Failed to Load Local Contents'
+				return
+			print colors.blue + '\n[*] ' + colors.end + 'Offline Mode Enabled, Searching Local Contents Only...'
+			print colors.blue + '[*] ' + colors.end + 'No Searchword Given, Showing all Modules...\n'			
+			contents = contents.split('\n')
+			for i in range(len(contents)):
+				if len(contents[i].strip()) == 0:
+					contents.remove(contents[i])
+			for i in range(len(contents)):
+				print contents[i].strip()
+			print colors.blue + '\n[*] ' + colors.end + 'Search Complete\n'
+			return
+		elif len(self.input) > 1:
+			try:
+				with open(basepath + 'resources/localcontents') as file:
+					contents = file.read()
+			except IOError:
+				print colors.red + '[!] ' + colors.end + 'Error: Failed to Load Local Contents'
+				return
+			print colors.blue + '\n[*] ' + colors.end + 'Offline Mode Enabled, Searching Local Contents Only...'
+			print colors.blue + '[*] ' + colors.end + 'Searching Local Contents for ' + self.input[1].strip() + '...\n'
+			contents = contents.split('\n')
+			for i in range(len(contents)):
+				if len(contents[i].strip()) == 0:
+					contents.remove(contents[i])
+			for i in range(len(contents)):
+				if self.input[1].strip() in contents[i]:
+					print contents[i]
+			print colors.blue + '\n[*] ' + colors.end + 'Search Complete\n'
+	def execute(self):
+		if prompt[1] == " > ":
+			print colors.red + "[!] " + colors.end + 'Error: No Module Selected'
+			return
+		else:
+			pass
+		temppath = path[0].split('/')
+		script = temppath[-1].strip()
+		temppath.append(script)
+		fullpath = '/'.join(temppath)
+		com = []
+		for i in range(len(order)):
+			com.append(config[order[i]])
+		com = ' '.join(com)
+		command = fullpath + " " + com
+		for i in range(len(order)):
+			if config[order[i]] == '':
+				print colors.red + "[!] " + colors.end + 'Error: Variables Left Unassigned'
+				return
+		system(command)
+	def stock(self):
+		try:
+			with open(basepath + "resources/localcontents") as file:
+				count = file.read()
+		except IOError:
+			print colors.red + "[!] " + colors.end + "Error: Failed to Read Contents File"
+			return
+		print colors.blue + "[*] " + colors.end + "Counting Locally Cached Tools..."
+		count = count.strip().split('\n')
+		count = str(len(count))
+		print colors.blue + "[*] " + colors.end + "There Are Currently " + count + " Tools Stored Locally"
+	def exit(self):
+		print colors.blue + "\n[*] " + colors.end + 'User Requested to Exit!'
+		print colors.blue + "[*] " + colors.end + 'Goodbye!\n'
+		sys.exit(1)
+
+class onlinecoms(object):
+	def __init__(self, ui):
+		self.input = ui
+	def help(self):
+		if len(self.input) < 2:
+			try:
+				with open(basepath + 'resources/help/genhelpup') as file:
+					help = file.read()
+			except IOError:
+				print colors.red + '[!] ' + colors.end + 'Error: Failed to Load General Help File'
+				return
+			print '\n' + colors.green + '[#] ' + colors.end + 'No Command Specified, Showing Brief...\n'
+			print help
+			return
+		else:
+			pass
+		commands = ['help', 'use', 'search', 'set', 'info', 'execute', 'stock']
+		if self.input[1].strip() in commands:
+			com = self.input[1].strip()
+			print
+			try:
+				with open(basepath + 'resources/help/' + self.input[1].strip()) as file:
+					help = file.read()
+					print colors.green + '\n[#] ' + colors.end + 'Displaying Help Page for ' + com + '...\n'
+					print help
+					return
+			except IOError:
+				print colors.red + '[!] ' + colors.end + 'Error: Failed to Load Help File(s)'
+				return
+		else:
+			print colors.red + '[!] ' + colors.end + 'Error: Invalid Help Page Specified'
+			return
+	def search(self):
+		if len(self.input) == 1 or 'local' not in self.input[1].strip().lower() and 'repo' not in self.input[1].strip().lower():
+			if len(self.input) > 1:
+				try:
+					print colors.blue + '\n[*] ' + colors.end + 'No Location Specified, Searching All Locations...'
+					try:
+						with open(basepath + 'resources/localcontents') as file:
+							local = file.read()
+					except IOError:
+						print colors.red + '[!] ' + colors.end + 'Error: Failed to Load Local Contents'
+						return
+					print colors.blue + '[*] ' + colors.end + 'Local:'
+					local = local.strip().split('\n')
+					for i in range(len(local)):
+						if self.input[1].strip().lower() in local[i].lower():
+							print local[i]
+					try:
+						with open(basepath + 'resources/repocontents') as file:
+							repo = file.read()
+					except IOError:
+						print colors.red + '[!] ' + colors.end + 'Error: Failed to Load Repository Contents'
+						return
+					print colors.blue + '\n[*] ' + colors.end + 'Repository:'
+					repo = repo.strip().split('\n')
+					for i in range(len(repo)):
+						if self.input[1].strip().lower() in repo[i].lower():
+							print repo[i]
+					print colors.blue + '\n[*] ' + colors.end + 'Search Complete\n'
+					return
+				except KeyboardInterrupt:
+					print colors.red + '[!] ' + colors.end + 'Error: User Interrupted Search'
+					return
+			elif len(self.input) == 1:
+				try:
+					print colors.blue + '\n[*] ' + colors.end + 'No Location Specified, Searching All Locations...'
+					print colors.blue + '[*] ' + colors.end + 'No Searchword Given, Showing All Modules...'
+					try:
+						with open(basepath + 'resources/localcontents') as file:
+							local = file.read()
+					except IOError:
+						print colors.red + '[!] ' + colors.end + 'Error: Failed to Load Local Contents'
+						return
+					local = local.strip().split('\n')
+					print colors.blue + '[*] ' + colors.end + 'Local:'
+					for i in range(len(local)):
+						print local[i]
+					try:
+						with open(basepath + 'resources/repocontents') as file:
+							repo = file.read()
+					except IOError:
+						print colors.red + '[!] ' + colors.end + 'Error: Failed to Load Repository Contents'
+						return
+					repo = repo.strip().split('\n')
+					print colors.blue + '\n[*] ' + colors.end + 'Repository:'
+					for i in range(len(repo)):
+						print repo[i]
+					print colors.blue + '\n[*] ' + colors.end + 'Search Complete\n'
+					return
+				except KeyboardInterrupt:
+					print colors.red + '[!] ' + colors.end + 'Error: User Interrupted Search'
+					return
+		elif 'local' in self.input[1].strip().lower():
+			if len(self.input) == 2:
+				try:
+					try:
+						with open(basepath + 'resources/localcontents') as file:
+							local = file.read()
+					except IOError:
+						print colors.red + '[!] ' + colors.end + 'Error: Failed to Load Local Contents'
+					print colors.blue + '\n[*] ' + colors.end + 'No Search Word Given, Showing all Modules...\n'
+					local = local.strip().split('\n')
+					for i in range(len(local)):
+						print local[i]
+					print colors.blue + '\n[*] ' + colors.end + 'Search Complete\n'
+					return
+				except KeyboardInterrupt:
+					print colors.red + '[!] ' + colors.end + 'Error: User Interrupted Search'
+					return
+			elif len(self.input) > 2:
+				try:
+					try:
+						with open(basepath + 'resources/localcontents') as file:
+							local = file.read()
+					except IOError:
+						print colors.red + '[!] ' + colors.end + 'Error: Failed to Load Local Contents'
+						return
+					local = local.strip().split('\n')
+					print colors.blue + '\n[*] ' + colors.end + 'Searching Local Contents for ' + self.input[2].strip().lower() + '...\n'
+					for i in range(len(local)):
+						if self.input[2].strip().lower() in local[i].strip().lower():
+							print local[i]
+					print colors.blue + '\n[*] ' + colors.end + 'Search Complete\n'
+					return
+				except KeyboardInterrupt:
+					print colors.red + '[!] ' + colors.end + 'Error: User Interrupted Search'
+					return
+		elif 'repo' in self.input[1].strip().lower():
+			if len(self.input) == 2:
+				try:
+					try:
+						with open(basepath + 'resources/repocontents') as file:
+							repo = file.read()
+					except IOError:
+						print colors.red + '[!] ' + colors.end + 'Error: Failed to Load Repository Contents'
+					print colors.blue + '\n[*] ' + colors.end + 'No Search Word Given, Showing all Modules...\n'
+					repo = repo.strip().split('\n')
+					for i in range(len(repo)):
+						print repo[i]
+					print colors.blue + '\n[*] ' + colors.end + 'Search Complete\n'
+					return
+				except KeyboardInterrupt:
+					print colors.red + '[!] ' + colors.end + 'Error: User Interrupted Search'
+					return
+			elif len(self.input) > 2:
+				try:
+					try:
+						with open(basepath + 'resources/repocontents') as file:
+							repo = file.read()
+					except IOError:
+						print colors.red + '[!] ' + colors.end + 'Error: Failed to Load Repository Contents'
+						return
+					repo = repo.strip().split('\n')
+					print colors.blue + '\n[*] ' + colors.end + 'Searching Repository Contents for ' + self.input[2].strip().lower() + '...\n'
+					for i in range(len(repo)):
+						if self.input[2].strip().lower() in repo[i].strip().lower():
+							print repo[i]
+					print colors.blue + '\n[*] ' + colors.end + 'Search Complete\n'
+					return
+				except KeyboardInterrupt:
+					print colors.red + '[!] ' + colors.end + 'Error: User Interrupted Search'
+					return
+
+def downparse(userin):
+	nput = userin.strip().split()
+	for i in range(len(nput)):
+		nput[i] = nput[i].strip()
+	if len(nput) == 0:
+		return
+	elif nput[0].lower() == "use":
+		try:
+			ui = launch(nput[1])
+			ui.offlineload()
+		except IndexError:
+			print colors.red + "[!] " + colors.end + 'Error: No Module Specified'
+	elif nput[0].lower() == "info":
+		ui = offlinecoms(nput)
+		ui.info()
+	elif nput[0].lower() == "search":
+		ui = offlinecoms(nput)
+		ui.search()
+	elif nput[0].lower() == "set":
+		ui = offlinecoms(nput)
+		ui.setvars()
+	elif nput[0].lower() == "execute":
+		ui = offlinecoms(nput)
+		ui.execute()
+	elif nput[0].lower() == "help":
+		ui = offlinecoms(nput)
+		ui.help()
+	elif nput[0].lower() == "stock":
+		ui = offlinecoms(nput)
+		ui.stock()
+	elif nput[0].lower() == "exit":
+		ui = offlinecoms(nput)
+		ui.exit()
+	else:
+		print colors.yellow + "[-] " + colors.end + 'NFError: Invalid Command'
+		print colors.green + "[#] " + colors.end + "Enter \"help\" for a List of Commands"
+
+def upparse(userin):
+	nput = userin.strip().split()
+	for i in range(len(nput)):
+		nput[i] = nput[i].strip()
+	if len(nput) == 0:
+		return
+	elif nput[0].lower() == 'use':
+		try:
+			ui = launch(nput[1])
+			ui.onlineload()
+		except IndexError:
+			print colors.red + '[!] ' + colors.end + 'Error: No Module Specified'
+	elif nput[0].lower() == 'info':
+		ui = offlinecoms(nput)
+		ui.info()
+	elif nput[0].lower() == 'search':
+		ui = onlinecoms(nput)
+		ui.search()
+	elif nput[0].lower() == 'set':
+		ui = offlinecoms(nput)
+		ui.setvars()
+	elif nput[0].lower() == 'execute':
+		ui = offlinecoms(nput)
+		ui.execute()
+	elif nput[0].lower() == 'help':
+		ui = offlinecoms(nput)
+		ui.help()
+	elif nput[0].lower() == 'stock':
+		ui = offlinecoms(nput)
+		ui.stock()
+	elif nput[0].lower() == 'exit':
+		ui = offlinecoms(nput)
+		ui.exit()
+	else:
+		print colors.yellow + '[-] ' + colors.end + 'NFError: Invalid Command'
+		print colors.green + '[#] ' + colors.end + 'Enter "help" for a List of Commands'
+
+if mode[0] == 'offline':
+	while 1:
+		try:
+			ui = raw_input(''.join(prompt))
+			downparse(ui)
+		except KeyboardInterrupt:
+			print colors.yellow + '\n[-] ' + colors.end + 'NFError: User Requested Interrupt\n' + colors.green + '[#] ' + colors.end + 'Enter the "exit" Command to Exit'
+elif mode[0] == 'online':
+	while 1:
+		try:
+			ui = raw_input(''.join(prompt))
+			upparse(ui)
+		except KeyboardInterrupt:
+			print colors.yellow + '\n[-] ' + colors.end + 'NFError: User Requested Interrupt\n' + colors.green + '[#] ' + colors.end + 'Enter the "exit" Command to Exit'
