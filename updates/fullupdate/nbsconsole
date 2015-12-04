@@ -6,7 +6,7 @@ import socket
 import subprocess
 import re
 import shutil
-
+# Developed By Defalt with help from Pheonix750 and Ciuffy!
 basepath = "/usr/share/nbs/"
 baseURL = 'https://www.github.com/NullByteSuiteDevs/NullByteSuite/raw/master/tools/'
 updateURL = 'https://www.github.com/NullByteSuiteDevs/NullByteSuite/raw/master/updates/'
