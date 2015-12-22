@@ -42,7 +42,13 @@ def setmode():
 			except OSError:
 				pass
 			getlog = subprocess.Popen(['wget', '-P', basepath + 'resources/updates', updateURL + 'checkup'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-			out, err = getlog.communicate()
+			try:
+				out, err = getlog.communicate()
+			except KeyboardInterrupt:
+				print colors.red + '[!] ' + colors.end + 'Error: User Interrupted Boot, Forcing Offline Boot'
+				shutil.rmtree(basepath + 'resources/updates')
+				mode.append('offline')
+				return
 			if 'failed' in err:
 				print colors.red + '[!] ' + colors.end + 'Error: Update Check Failed, Forcing Offline Boot'
 				shutil.rmtree(basepath + 'resources/updates')
