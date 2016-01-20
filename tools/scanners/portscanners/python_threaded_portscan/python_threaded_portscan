@@ -1,0 +1,132 @@
+#!/usr/bin/env python
+## -*- coding: cp437 -*-
+#What a mess...
+
+
+import logging
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
+try:
+	from scapy.all import *
+except ImportError:
+	print("[!]Install scapy to use this module.")
+	exit()
+from datetime import datetime
+import Queue
+import threading
+import sys
+
+src_port = RandShort()
+dst_ip = sys.argv[1]
+port_range = sys.argv[2]
+ping = sys.argv[3]
+cool = False
+
+toscan = []
+for i in port_range.split(','):
+	try:
+		if '-' not in i:
+			toscan.append(int(i))
+		else:
+			l, h = map(int, i.split('-'))
+			toscan += range(l, h+1)
+	except ValueError:
+		print("[-]Invalid characters in port list.")
+
+q = Queue.Queue()
+random.shuffle(toscan)
+ports = []
+open_ports = []
+closed = []
+TCP_REVERSE = dict((TCP_SERVICES[k], k) for k in TCP_SERVICES.keys())
+
+def scan_port(dst_ip, src_port, dest_port):
+	try:	
+		if dest_port == "LAST":
+			time.sleep(1)		
+			return("LAST")
+		resp = sr1(IP(dst=dst_ip)/TCP(sport=src_port, dport=dest_port, flags="S"), timeout=3, verbose=0)
+		if cool:
+			print("\033[92m"+resp.summary())
+		if not resp or resp is None:
+			return("CLOSED")	
+		elif(resp.haslayer(TCP)):
+			if(resp.getlayer(TCP).flags == 0x12):                                                                            
+				sr1(IP(dst=dst_ip)/TCP(sport=src_port, dport=dest_port, flags="AR"), timeout=0.05, verbose=0)		
+				return(dest_port)
+			elif(resp.getlayer(TCP).flags == 0x14):
+				return("CLOSED")
+	except:
+		return("CLOSED")
+
+def scan(q, d, s, de):
+	q.put(scan_port(d, s, de))
+
+try:
+	if ping != "false":
+		packet = IP(dst=dst_ip)/ICMP()
+		ans = sr1(packet, timeout=5, verbose=0)
+		if not ans:
+			print("[-]Target unreachable.")
+			exit()
+	else:
+		print("[*]Skipping ping.")
+	print("[*]Starting scan...")
+	t1 = datetime.now()
+	last = len(toscan) - 1
+	for index, dest_port in enumerate(toscan):				
+		if index%100 == 0:
+			if int((float(index)/len(toscan))*100) != 0:
+				print("[*]Scan {0:n}".format(int((float(index)/len(toscan))*100))+"% complete.")
+		t = threading.Thread(target=scan, args=(q, dst_ip, src_port, dest_port))
+		t.start()
+		if index == last:
+			t = threading.Thread(target=scan, args=(q, dst_ip, src_port, "LAST"))
+			t.start()
+			print("[*]Scan finished, waiting for threads to return.")
+
+	while True:
+		s = q.get()
+		if s:
+			ports.append(s)
+		if s == "LAST":
+			break
+
+	t2 = datetime.now()
+	time = t2-t1
+
+	ports.sort()
+
+	for port in toscan:
+		closed.append(port)
+
+	for port in ports:
+		if port <> None and port <> "CLOSED":
+			open_ports.append(port)
+			try:
+				closed.remove(port)
+			except:
+				pass
+		else:
+			pass
+
+	if open_ports[0] == 'LAST':
+		print("[*]All scanned ports are closed.")
+		print("[*]Scanned "+str(last+1)+" ports in "+str(time)+".")
+		exit()
+
+	print("[*]┌────────────────────────────┐")
+	print("[*]│{}{}{}     │".format("PORT".ljust(10),"STATE".ljust(6), "SERVICE"))
+	print("[*]├────────────────────────────┤")
+	for port in open_ports:
+		if port <> 'LAST':	
+			try:
+				print("[*]│{}{}{}│".format(str(port).ljust(10),"OPEN".ljust(6), TCP_REVERSE[port].ljust(12)))
+			except:
+				print("[*]│{}{}{}│".format(str(port).ljust(10),"OPEN".ljust(6), "unknown".ljust(12)))
+	print("[*]└────────────────────────────┘")
+	print("[*]"+str(len(closed))+" closed port(s) not shown.")
+	print("[*]Scanned "+str(last+1)+" port(s) in "+str(time)+".")
+
+except KeyboardInterrupt:
+	print("[*]User requested shutdown")
+	exit()
