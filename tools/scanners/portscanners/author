@@ -1,0 +1,12 @@
+This is a threaded port scanner written in Python.
+
+It works by sending SYN packets and waiting for responses. A SYN-ACK means the port is open, RST-ACK means the port is closed. Threading is used to scan as fast as possible.
+
+Please note that the SERVICE column only shows what the port is commonly used for, not what the service actually is!
+
+TARGET - IP of target.
+PORT_RANGE - Ports to scan. Use single ports separated by commas (No spaces!), and/or port ranges, eg. 1,50,100-1000,8342
+PING - Set to "false" to skip pinging the target.
+
+This module has been written by Joe Schmoe.
+WARNING - This module was built for speed, it will make A LOT of noise!
