@@ -1,0 +1,9 @@
+This is a socket port scanner written in Ruby! It works by attempting a
+socket connection to every port in the given range. A successful connection
+means an open port.
+
+The RHOST must be the target IP address.
+The MINPORT must be the start port.
+The MAXPORT must be the stop port.
+
+This module was developed by Defalt!
