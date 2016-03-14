@@ -1,0 +1,8 @@
+This is a directory brute forcing tool written in Python. It retries HTTP
+requests on each specified file. It will report any path that responds with
+a 200 OK response code.
+
+The DOMAIN must be the domain (or IP address) of the target.
+The WORDLIST must be wordlist of paths to attempt.
+
+This module was developed by Defalt!
