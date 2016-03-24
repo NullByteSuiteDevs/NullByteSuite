@@ -2,3 +2,4 @@ scanners/webapps/adminfinder
 scanners/portscanners/python_threaded_portscan
 scanners/portscanners/ruby_portscan
 scanners/webapps/directory_bruteforce
+sniffers/ftp/python_ftp_credsniff
