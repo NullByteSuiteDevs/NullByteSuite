@@ -1,0 +1,7 @@
+This is an FTP password sniffer written in Python!
+It will sniff the specifed network interface for FTP logins
+and will report any valid credentials back to the attacker.
+
+The IFACE must be the network interface to sniff on. Ex: 'wlan0'
+
+The module was developed by Defalt!
